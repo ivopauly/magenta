@@ -1,16 +1,17 @@
-# Copyright 2018 Google Inc. All Rights Reserved.
+# Copyright 2019 The Magenta Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """MusicVAE generation script."""
 
 # TODO(adarob): Add support for models with conditioning.
@@ -23,13 +24,11 @@ import os
 import sys
 import time
 
-# internal imports
-import numpy as np
-import tensorflow as tf
-
 from magenta import music as mm
 from magenta.models.music_vae import configs
 from magenta.models.music_vae import TrainedModel
+import numpy as np
+import tensorflow as tf
 
 flags = tf.app.flags
 logging = tf.logging
@@ -117,8 +116,8 @@ def run(config_map):
       raise ValueError('Input MIDI 1 not found: %s' % FLAGS.input_midi_1)
     if not os.path.exists(input_midi_2):
       raise ValueError('Input MIDI 2 not found: %s' % FLAGS.input_midi_2)
-    input_1 = mm.midi_to_sequence_proto(tf.gfile.GFile(input_midi_1).read())
-    input_2 = mm.midi_to_sequence_proto(tf.gfile.GFile(input_midi_2).read())
+    input_1 = mm.midi_file_to_note_sequence(input_midi_1)
+    input_2 = mm.midi_file_to_note_sequence(input_midi_2)
 
     def _check_extract_examples(input_ns, path, input_number):
       """Make sure each input returns exactly one example from the converter."""
@@ -147,9 +146,11 @@ def run(config_map):
     _check_extract_examples(input_2, FLAGS.input_midi_2, 2)
 
   logging.info('Loading model...')
-  checkpoint_dir_or_path = os.path.expanduser(
-      os.path.join(FLAGS.run_dir, 'train')
-      if FLAGS.run_dir else FLAGS.checkpoint_file)
+  if FLAGS.run_dir:
+    checkpoint_dir_or_path = os.path.expanduser(
+        os.path.join(FLAGS.run_dir, 'train'))
+  else:
+    checkpoint_dir_or_path = os.path.expanduser(FLAGS.checkpoint_file)
   model = TrainedModel(
       config, batch_size=min(FLAGS.max_batch_size, FLAGS.num_outputs),
       checkpoint_dir_or_path=checkpoint_dir_or_path)
